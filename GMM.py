@@ -4,6 +4,9 @@
 # import matplotlib.cm as cmx
 # import matplotlib.colors as colors
 # import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
+from scipy.stats import norm 
+import os
 import numpy as np
 import cv2
 import sys
@@ -15,6 +18,95 @@ import glob
 from sklearn.cluster import KMeans
 from scipy import stats
 
+def gaussian_fit(xdata,ydata):
+    mu = np.sum(xdata*ydata)/np.sum(ydata)
+    sigma = np.sqrt(np.abs(np.sum((xdata-mu)**2*ydata)/np.sum(ydata)))
+    return mu, sigma
+
+def get_histogram(data, ch):
+    p, q, r = data.shape
+      
+    # calculate histogram of image
+    histb = cv2.calcHist([data],[0],None,[256],[0,256])
+    histg = cv2.calcHist([data],[1],None,[256],[0,256])
+    histr = cv2.calcHist([data],[2],None,[256],[0,256])
+    # ignore black values
+    histr[0] = 0 
+    histg[0] = 0
+    histb[0] = 0
+
+    # Generate gaussin fit for three channels
+    x = np.arange(0, 256, 1) 
+    mu_r, sigma_r = gaussian_fit(np.reshape(x, (256, 1)), np.reshape(histr, (256, 1)))
+    y_r = norm.pdf(x, mu_r, sigma_r)
+    mu_g, sigma_g = gaussian_fit(np.reshape(x, (256, 1)), np.reshape(histg, (256, 1)))
+    y_g = norm.pdf(x, mu_g, sigma_g)
+    mu_b, sigma_b = gaussian_fit(np.reshape(x, (256, 1)), np.reshape(histb, (256, 1)))
+    y_b = norm.pdf(x, mu_b, sigma_b)
+
+
+    fig, axs = plt.subplots(2)
+    fig.suptitle('Display graphs')
+    axs[0].plot(x, y_r, 'r', label="calculated")
+    axs[0].plot(x, y_g, 'g', label="calculated")
+    axs[0].plot(x, y_b, 'b', label="calculated")
+    axs[1].plot(histr, 'r')
+    axs[1].plot(histg, 'g')
+    axs[1].plot(histb, 'b')
+
+    plt.show() 
+
+# Read train images for different categories and display histogram
+def get_1Dgaussian(ch = 'r'):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    red_dir = os.path.join(current_dir, "Data/Red/Extracted")
+    yellow_dir = os.path.join(current_dir, "Data/Yellow/Extracted") 
+    green_dir = os.path.join(current_dir, "Data/Green/Extracted")
+    
+    first = True
+    count = 1
+    if ch == 'r':
+        for name in sorted(os.listdir(red_dir)):
+            im = cv2.imread(os.path.join(red_dir, name))
+            im = cv2.resize(im, (40, 40), interpolation = cv2.INTER_AREA)
+            count = count + 1
+            if first:
+                data = im
+                first = False
+            else:
+                data = np.column_stack((data, im))
+
+        get_histogram(data, ch)
+
+
+    elif ch == 'y':
+        for name in sorted(os.listdir(yellow_dir)):
+            im = cv2.imread(os.path.join(yellow_dir, name))
+            im = cv2.resize(im, (40, 40), interpolation = cv2.INTER_AREA)
+            count = count + 1
+            if first:
+                data = im
+                first = False
+            else:
+                data = np.column_stack((data, im))
+
+        get_histogram(data, ch)
+
+    elif ch == 'g':
+        for name in sorted(os.listdir(green_dir)):
+            im = cv2.imread(os.path.join(green_dir, name))
+            im = cv2.resize(im, (40, 40), interpolation = cv2.INTER_AREA)
+            count = count + 1
+            if first:
+                data = im
+                first = False
+            else:
+                data = np.column_stack((data, im))
+
+        get_histogram(data, ch)
+
+    else:
+        print("Wrong choice")
 
 def generate_gaussian(image_path):
     image = cv2.imread(image_path)
