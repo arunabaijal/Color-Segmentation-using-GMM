@@ -212,8 +212,11 @@ def get_likelihood(X, clusters):
     return np.sum(sample_likelihoods), sample_likelihoods
 
 
-def train_gmm(X, n_clusters, n_epochs):
-    clusters = initialize_clusters(X, n_clusters)
+def train_gmm(X, n_clusters, n_epochs, clusters, flag):
+    if flag:
+        clusters = clusters
+    else:
+        clusters = initialize_clusters(X, n_clusters)
     likelihoods = np.zeros((n_epochs,))
     scores = np.zeros((X.shape[0], n_clusters))
     history = []
@@ -269,77 +272,57 @@ def create_pdf(params, X, shape):
     cv2.imshow('segmented', seg_image.transpose())
     cv2.waitKey(0)
     
-
-if __name__ == '__main__':
-    X = []
-    # for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
-    #     image = cv2.imread(image_path)
-    #     image = cv2.resize(image, (30, 30))
-    image = cv2.imread("Data/Green/Test/frame008.png")
-    for i in range(image.shape[1]):
-        for j in range(image.shape[0]):
-            X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    params = []
-    params.append([{'mu_k': [252.16152635, 152.40805137,  93.57734565],
-              'cov_k': [[  9.26513121, -37.31779491, -21.68779137],
-                         [-37.31779491, 387.94743064, 228.53106602],
-                         [-21.68779137, 228.53106602, 189.12188744]],
-              'pi_k': [0.59897148]},
-    {'mu_k': [230.37233525, 171.62158315, 121.0135146],
-     'cov_k': [[ 596.22083251,  235.6915169,    62.65293133],
-               [ 235.6915169,  1108.6769714,   706.83031066],
-               [  62.65293133,  706.83031066,  537.28323765]],
-     'pi_k': [0.08908288]},
-      {'mu_k': [237.03092141, 214.56417343, 131.05491014],
-       'cov_k': [[  40.82748049, -112.97472246, -101.0973088 ],
-                 [-112.97472246,  447.85877011,  382.74532092],
-                 [-101.0973088,   382.74532092,  429.67233197]],
-       'pi_k': [0.31194564]}
-    ])
-    #Green
-    params.append([{'mu_k': [198.52851258, 245.92232003, 156.95888053],
-               'cov_k':[[405.95235374,  14.57167719, 256.60293682],
-                        [ 14.57167719,  27.41013544,  31.93758814],
-                        [256.60293682,  31.93758814, 234.29463999]],
-               'pi_k': [0.24017603]},
-              {'mu_k': [106.67782568, 186.55604151, 116.23520101],
-               'cov_k':[[130.62914369, 156.4074056,   71.10019976],
-                        [156.4074056,  311.47821003,  95.22541093],
-                        [ 71.10019976,  95.22541093,  67.39115444]],
-               'pi_k': [0.41947481]},
-              {'mu_k': [143.11443463, 227.27641259, 129.40975209],
-               'cov_k': [[297.74849462, 192.95405216, 136.55362279],
-                         [192.95405216, 195.68659985,  71.51763291],
-                         [136.55362279,  71.51763291,  88.74814044]],
-               'pi_k': [0.34034916]}])
-    # yellow
-    params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
-              'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
-                       [ 584.75558749,  456.76008394,  278.65632245],
-                       [  36.38668374,  278.65632245,  858.18023939]],
-              'pi_k': [0.39008973]},
-             {'mu_k': [229.51226295, 240.6241885,  139.21091162],
-              'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
-                       [1.51749218,   4.52050088, - 29.73265531],
-                       [-42.08377392, - 29.73265531, 772.02085145]],
-              'pi_k': [0.55869529]},
-             {'mu_k': [82.88271189, 91.51975606, 61.31964543],
-              'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
-                        [2687.98151126, 2944.4162938,  2029.92877086],
-                        [1836.63756781, 2029.92877086, 1480.67198803]],
-              'pi_k': [0.05121499]}])
-    create_pdf(params, X, image.shape)
-
 def start_training():
     X = []
-    for image_path in glob.glob("Data/Red/Extracted/*")[:20]:
+    image_paths = glob.glob("Data/Red/Extracted/*")
+    for image_path in image_paths[:20]:
         image = cv2.imread(image_path)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
                     X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
 
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, None, False)
+    X = []
+    for image_path in image_paths[21:40]:
+        image = cv2.imread(image_path)
+        for i in range(image.shape[1]):
+            for j in range(image.shape[0]):
+                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    X = []
+    for image_path in image_paths[41:60]:
+        image = cv2.imread(image_path)
+        for i in range(image.shape[1]):
+            for j in range(image.shape[0]):
+                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    X = []
+    for image_path in image_paths[61:80]:
+        image = cv2.imread(image_path)
+        for i in range(image.shape[1]):
+            for j in range(image.shape[0]):
+                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    X = []
+    for image_path in image_paths[81:100]:
+        image = cv2.imread(image_path)
+        for i in range(image.shape[1]):
+            for j in range(image.shape[0]):
+                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    X = []
+    for image_path in image_paths[101:]:
+        image = cv2.imread(image_path)
+        for i in range(image.shape[1]):
+            for j in range(image.shape[0]):
+                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
     f = open("clusters_red.txt", "a+")
     for cluster in clusters:
         f.write(str(cluster['mu_k']))
@@ -347,37 +330,98 @@ def start_training():
         f.write(str(cluster['pi_k']))
     f.close()
     # create_pdf(clusters, X)
-    X = []
-    for image_path in glob.glob("Data/Green/Extracted/*")[:20]:
-        image = cv2.imread(image_path)
-        for i in range(image.shape[1]):
-            for j in range(image.shape[0]):
-                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
-    f = open("clusters_green.txt", "a+")
-    for cluster in clusters:
-        f.write(str(cluster['mu_k']))
-        f.write(str(cluster['cov_k']))
-        f.write(str(cluster['pi_k']))
-    f.close()
-    create_pdf(clusters, X)
-    X = []
-    for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
-        image = cv2.imread(image_path)
-        image = cv2.resize(image, (30,30))
-        for i in range(image.shape[1]):
-            for j in range(image.shape[0]):
-                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
-    f = open("clusters_yellow.txt", "a+")
-    for cluster in clusters:
-        f.write(str(cluster['mu_k']))
-        f.write(str(cluster['cov_k']))
-        f.write(str(cluster['pi_k']))
-    f.close()
+    # X = []
+    # for image_path in glob.glob("Data/Green/Extracted/*")[:20]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    #
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
+    # f = open("clusters_green.txt", "a+")
+    # for cluster in clusters:
+    #     f.write(str(cluster['mu_k']))
+    #     f.write(str(cluster['cov_k']))
+    #     f.write(str(cluster['pi_k']))
+    # f.close()
+    # create_pdf(clusters, X)
+    # X = []
+    # for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
+    #     image = cv2.imread(image_path)
+    #     image = cv2.resize(image, (30,30))
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    #
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
+    # f = open("clusters_yellow.txt", "a+")
+    # for cluster in clusters:
+    #     f.write(str(cluster['mu_k']))
+    #     f.write(str(cluster['cov_k']))
+    #     f.write(str(cluster['pi_k']))
+    # f.close()
     # create_pdf(clusters, X)
     # print(X)
+    
+if __name__ == '__main__':
+    start_training()
+    # X = []
+    # # for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
+    # #     image = cv2.imread(image_path)
+    # #     image = cv2.resize(image, (30, 30))
+    # image = cv2.imread("Data/Green/Test/frame008.png")
+    # for i in range(image.shape[1]):
+    #     for j in range(image.shape[0]):
+    #         X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # params = []
+    # params.append([{'mu_k': [252.16152635, 152.40805137,  93.57734565],
+    #           'cov_k': [[  9.26513121, -37.31779491, -21.68779137],
+    #                      [-37.31779491, 387.94743064, 228.53106602],
+    #                      [-21.68779137, 228.53106602, 189.12188744]],
+    #           'pi_k': [0.59897148]},
+    # {'mu_k': [230.37233525, 171.62158315, 121.0135146],
+    #  'cov_k': [[ 596.22083251,  235.6915169,    62.65293133],
+    #            [ 235.6915169,  1108.6769714,   706.83031066],
+    #            [  62.65293133,  706.83031066,  537.28323765]],
+    #  'pi_k': [0.08908288]},
+    #   {'mu_k': [237.03092141, 214.56417343, 131.05491014],
+    #    'cov_k': [[  40.82748049, -112.97472246, -101.0973088 ],
+    #              [-112.97472246,  447.85877011,  382.74532092],
+    #              [-101.0973088,   382.74532092,  429.67233197]],
+    #    'pi_k': [0.31194564]}
+    # ])
+    # #Green
+    # params.append([{'mu_k': [198.52851258, 245.92232003, 156.95888053],
+    #            'cov_k':[[405.95235374,  14.57167719, 256.60293682],
+    #                     [ 14.57167719,  27.41013544,  31.93758814],
+    #                     [256.60293682,  31.93758814, 234.29463999]],
+    #            'pi_k': [0.24017603]},
+    #           {'mu_k': [106.67782568, 186.55604151, 116.23520101],
+    #            'cov_k':[[130.62914369, 156.4074056,   71.10019976],
+    #                     [156.4074056,  311.47821003,  95.22541093],
+    #                     [ 71.10019976,  95.22541093,  67.39115444]],
+    #            'pi_k': [0.41947481]},
+    #           {'mu_k': [143.11443463, 227.27641259, 129.40975209],
+    #            'cov_k': [[297.74849462, 192.95405216, 136.55362279],
+    #                      [192.95405216, 195.68659985,  71.51763291],
+    #                      [136.55362279,  71.51763291,  88.74814044]],
+    #            'pi_k': [0.34034916]}])
+    # # yellow
+    # params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
+    #           'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
+    #                    [ 584.75558749,  456.76008394,  278.65632245],
+    #                    [  36.38668374,  278.65632245,  858.18023939]],
+    #           'pi_k': [0.39008973]},
+    #          {'mu_k': [229.51226295, 240.6241885,  139.21091162],
+    #           'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
+    #                    [1.51749218,   4.52050088, - 29.73265531],
+    #                    [-42.08377392, - 29.73265531, 772.02085145]],
+    #           'pi_k': [0.55869529]},
+    #          {'mu_k': [82.88271189, 91.51975606, 61.31964543],
+    #           'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
+    #                     [2687.98151126, 2944.4162938,  2029.92877086],
+    #                     [1836.63756781, 2029.92877086, 1480.67198803]],
+    #           'pi_k': [0.05121499]}])
+    # create_pdf(params, X, image.shape)
