@@ -313,7 +313,7 @@ def create_pdf(params, X, img, shape, name):
 
     img = detect_green(img,seg_g,(0,255,0), name)
     img = detect_orange(img,seg_o,(0,165,255), name)
-    img = detect_yellow(img,seg_y,(0,255,255), name)
+    # img = detect_yellow(img,seg_y,(0,255,255), name)
 
 
     # img = detect_orange(img,seg_o)
@@ -338,7 +338,7 @@ def detect_green(img,seg,color, name):
 
 
     contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    print("contours green",len(contours))
+    # print("contours green",len(contours))
 
     # contours_g = []
     # for con in contours1:
@@ -355,35 +355,38 @@ def detect_green(img,seg,color, name):
         if perimeter == 0:
             break
         circularity = 4*math.pi*(area/(perimeter*perimeter))
-        print("circularity",circularity)
-        if 0.3 < circularity < 1.2:              # perfect circularity 0.68
+        # print("circularity",circularity)
+        if 0.2 < circularity < 1.2:              # perfect circularity 0.68
             circles.append(con)
 
-    print("circles green",len(circles))
-    flag = False
+    # print("circles green",len(circles))
+    flag = True
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         # print("radius",radius)
         if radius > 7:                           # perfect buoy radius 10
-            flag = True
+            flag = False
             if radius < 11:
                 radius = 11
             cv2.circle(img, center, radius, color, 2)
-    if not flag:
-        cv2.imwrite("Data/Red/Missed/" + name, img)
+    if flag:
+        cv2.imwrite("Data/Green/Missed/" + name, img)
     return img
 
 def detect_orange(img,seg,color, name):
-
+    
+    # cv2.imshow('seg', seg)
+    # cv2.waitKey(0)
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
 
     # dilation = cv2.dilate(seg_g, kernel, iterations=9)
     closing = cv2.morphologyEx(seg, cv2.MORPH_CLOSE, kernel)
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
-
+    # cv2.imshow('opening', opening)
+    # cv2.waitKey(0)
 
     contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     print("contours orange",len(contours))
@@ -403,23 +406,28 @@ def detect_orange(img,seg,color, name):
         if perimeter == 0:
             break
         circularity = 4*math.pi*(area/(perimeter*perimeter))
-        # print("circularity",circularity)
-        if 0.5 < circularity < 1.2:              # perfect circularity 0.68
+        print("circularity",circularity)
+        if 0.2 < circularity < 1.2:              # perfect circularity 0.68
             circles.append(con)
 
     # print("circles orange",len(circles))
-    flag = False
+    flag = True
+    max_rad = 0
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         print("radius", radius)
-        if radius > 8:
-            flag = True
-            if radius < 11:
-                radius = 11  # perfect buoy radius 11
-            cv2.circle(img, center, radius, color, 2)
+        if radius >= 6:
+            flag = False
+            if radius > max_rad:
+                max_rad = radius
+                max_center = center
     if not flag:
+        if max_rad < 11:
+            max_rad = 11  # perfect buoy radius 11
+        cv2.circle(img, max_center, max_rad, color, 2)
+    else:
         cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
@@ -434,7 +442,7 @@ def detect_yellow(img,seg,color, name):
 
 
     contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    print("contours yellow",len(contours))
+    # print("contours yellow",len(contours))
 
     # contours_g = []
     # for con in contours1:
@@ -455,13 +463,13 @@ def detect_yellow(img,seg,color, name):
         if 0.5 < circularity < 1.2:              # perfect circularity 0.68
             circles.append(con)
 
-    print("circles yellow",len(circles))
+    # print("circles yellow",len(circles))
 
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
-        print("radius",radius)
+        # print("radius",radius)
         if radius >= 5:                           # perfect buoy radius 10
             cv2.circle(img, center, radius, color, 2)
     return img
