@@ -246,9 +246,9 @@ def train_gmm(X, n_clusters, n_epochs, clusters, flag):
     
     return clusters, likelihoods, scores, sample_likelihoods, history
 
-def create_pdf(params, X, shape):
-    seg_image = np.zeros(((shape[1], shape[0])))
-    print(seg_image.shape)
+def create_pdf(params, X, img, shape):
+    seg_image = np.zeros(shape)
+    print("seg:", seg_image.shape)
     pdf = np.zeros((len(X),3))
     # x = np.array([np.arange(0,256,1), X[:,1], X[:,2]]).transpose()
     x = np.array(X, dtype='uint8')
@@ -259,17 +259,35 @@ def create_pdf(params, X, shape):
     # plt.plot(x, pdf)
     # plt.show()
     print(pdf.shape)
-    pdf_r = pdf[:,0].reshape((shape[1], shape[0]))
-    pdf_g = pdf[:,1].reshape((shape[1], shape[0]))
-    pdf_y = pdf[:,2].reshape((shape[1], shape[0]))
+    pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
+    pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
+    pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
+    pdf = pdf.reshape(shape)
     print(pdf.shape)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     # max = np.max(pdf)
     # pdf = pdf*255/max
-    for i in range(shape[1]):
-        for j in range(shape[0]):
-            if pdf_g[i][j] > pdf_r[i][j] and pdf_g[i][j] > pdf_y[i][j] and pdf_g[i][j] > 1*10**-5:
-                seg_image[i][j] = 255
-    cv2.imshow('segmented', seg_image.transpose())
+    for i in range(shape[0]):
+        for j in range(shape[1]):
+            max_prob = max(pdf[i][j])
+            # print(max_prob)
+            # print(pdf_r[i][j], pdf_g[i][j], pdf_y[i][j])
+            if max_prob == pdf_r[i][j] and pdf_r[i][j] > 1.5*10**-5:
+                seg_image[i][j][2] = img[i][j][2]
+            elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 1.5*10**-4:
+                seg_image[i][j][1] = img[i][j][1]
+                seg_image[i][j][2] = img[i][j][2]
+            elif max_prob == pdf_g[i][j] and pdf_g[i][j] > 10**-5:
+                seg_image[i][j][1] = img[i][j][1]
+
+            # elif pdf_g[i][j] > pdf_r[i][j] and pdf_g[i][j] > pdf_y[i][j] and pdf_g[i][j] > 10**-5:
+            #     seg_image[i][j][1] = 255
+                # print(seg_image[i][j])
+
+    # cv2.imshow("image", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    # cv2.waitKey(10)
+    cv2.imwrite("test.png", seg_image)
+    cv2.imshow('segmented', seg_image)
     cv2.waitKey(0)
     
 def start_training():
