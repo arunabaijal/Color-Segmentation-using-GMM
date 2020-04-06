@@ -292,8 +292,8 @@ def create_pdf(params, X, img, shape):
     
 def start_training():
     X = []
-    image_paths = glob.glob("Data/Red/Extracted/*")
-    for image_path in image_paths[:20]:
+    image_paths = glob.glob("Data/Green/Extracted/*")
+    for image_path in image_paths[:10]:
         image = cv2.imread(image_path)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
@@ -302,7 +302,7 @@ def start_training():
 
     clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, None, False)
     X = []
-    for image_path in image_paths[21:40]:
+    for image_path in image_paths[10:20]:
         image = cv2.imread(image_path)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
@@ -310,38 +310,78 @@ def start_training():
                     X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
     clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
     X = []
-    for image_path in image_paths[41:60]:
+    for image_path in image_paths[20:]:
         image = cv2.imread(image_path)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
                     X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
     clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
-    X = []
-    for image_path in image_paths[61:80]:
-        image = cv2.imread(image_path)
-        for i in range(image.shape[1]):
-            for j in range(image.shape[0]):
-                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
-    X = []
-    for image_path in image_paths[81:100]:
-        image = cv2.imread(image_path)
-        for i in range(image.shape[1]):
-            for j in range(image.shape[0]):
-                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
-    X = []
-    for image_path in image_paths[101:]:
-        image = cv2.imread(image_path)
-        for i in range(image.shape[1]):
-            for j in range(image.shape[0]):
-                if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-                    X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
-    f = open("clusters_red.txt", "a+")
+    # X = []
+    # for image_path in image_paths[40:50]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[50:60]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[60:70]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[70:80]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[80:90]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[90:100]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[100:110]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    # X = []
+    # for image_path in image_paths[110:]:
+    #     image = cv2.imread(image_path)
+    #     for i in range(image.shape[1]):
+    #         for j in range(image.shape[0]):
+    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
+    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
+    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
+    f = open("clusters_green.txt", "a+")
     for cluster in clusters:
         f.write(str(cluster['mu_k']))
         f.write(str(cluster['cov_k']))
