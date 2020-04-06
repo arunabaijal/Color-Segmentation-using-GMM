@@ -311,9 +311,9 @@ def create_pdf(params, X, img, shape, name):
             #     seg_image[i][j][1] = 255
                 # print(seg_image[i][j])
 
-    img = detect_green(img,seg_g,(0,255,0))
-    img = detect_orange(img,seg_o,(0,165,255))
-    img = detect_yellow(img,seg_y,(0,255,255))
+    img = detect_green(img,seg_g,(0,255,0), name)
+    img = detect_orange(img,seg_o,(0,165,255), name)
+    img = detect_yellow(img,seg_y,(0,255,255), name)
 
 
     # img = detect_orange(img,seg_o)
@@ -323,11 +323,11 @@ def create_pdf(params, X, img, shape, name):
         os.makedirs("Data/Output/Frames/")
     cv2.imwrite("Data/Output/Frames/" + name, img)
 
-    cv2.imshow('img', img)
-    cv2.waitKey(0)
+    # cv2.imshow('img', img)
+    # cv2.waitKey(0)
 
 
-def detect_green(img,seg,color):
+def detect_green(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -337,7 +337,7 @@ def detect_green(img,seg,color):
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 
 
-    _, contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     print("contours green",len(contours))
 
     # contours_g = []
@@ -360,17 +360,22 @@ def detect_green(img,seg,color):
             circles.append(con)
 
     print("circles green",len(circles))
-
+    flag = False
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         # print("radius",radius)
         if radius > 7:                           # perfect buoy radius 10
+            flag = True
+            if radius < 11:
+                radius = 11
             cv2.circle(img, center, radius, color, 2)
+    if not flag:
+        cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
-def detect_orange(img,seg,color):
+def detect_orange(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -380,7 +385,7 @@ def detect_orange(img,seg,color):
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 
 
-    _, contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     print("contours orange",len(contours))
 
     # contours_g = []
@@ -403,17 +408,22 @@ def detect_orange(img,seg,color):
             circles.append(con)
 
     # print("circles orange",len(circles))
-
+    flag = False
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
-        print("radius",radius)
-        if radius > 7:                           # perfect buoy radius 10
+        print("radius", radius)
+        if radius > 8:
+            flag = True
+            if radius < 11:
+                radius = 11  # perfect buoy radius 11
             cv2.circle(img, center, radius, color, 2)
+    if not flag:
+        cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
-def detect_yellow(img,seg,color):
+def detect_yellow(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -423,7 +433,7 @@ def detect_yellow(img,seg,color):
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 
 
-    _, contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     print("contours yellow",len(contours))
 
     # contours_g = []
@@ -618,21 +628,21 @@ if __name__ == '__main__':
                         [ 78.33404419, 102.67266542,  71.72121417]],
                'pi_k': [0.45197282]}])
     # yellow
-    params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
-              'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
-                       [ 584.75558749,  456.76008394,  278.65632245],
-                       [  36.38668374,  278.65632245,  858.18023939]],
-              'pi_k': [0.39008973]},
-             {'mu_k': [229.51226295, 240.6241885,  139.21091162],
-              'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
-                       [1.51749218,   4.52050088, - 29.73265531],
-                       [-42.08377392, - 29.73265531, 772.02085145]],
-              'pi_k': [0.55869529]},
-             {'mu_k': [82.88271189, 91.51975606, 61.31964543],
-              'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
-                        [2687.98151126, 2944.4162938,  2029.92877086],
-                        [1836.63756781, 2029.92877086, 1480.67198803]],
-              'pi_k': [0.05121499]}])
+    params.append([{'mu_k': [228.31602817, 238.5949339,  173.6752935 ],
+              'cov_k':[[ 2.91732233,  0.82988898,  0.33160615],
+                       [ 0.82988898,  1.75061601, -0.24189029],
+                       [ 0.33160615, -0.24189029,  9.91727787]],
+              'pi_k': [0.14398764]},
+             {'mu_k': [216.05333612, 219.6934666,  114.20710685],
+              'cov_k':[[ 741.51694195,  403.25024373,   51.67876556],
+                       [ 403.25024373,  404.85554613,  396.04026024],
+                       [  51.67876556,  396.04026024, 1008.37538739]],
+              'pi_k': [0.39397701]},
+             {'mu_k': [230.27535144, 241.26179943, 124.20181911],
+              'cov_k': [[ 9.60457292e+00,  2.10043881e-01, -4.75862736e+01],
+                        [ 2.10043881e-01,  5.27006195e+00, -7.64786812e-01],
+                        [-4.75862736e+01, -7.64786812e-01,  5.20738484e+02]],
+              'pi_k': [0.46203535]}])
 
     # image = cv2.imread("Data/Green/Test/frame008.png")
     current_dir = os.path.dirname(os.path.abspath(__file__))
