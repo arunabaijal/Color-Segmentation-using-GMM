@@ -96,9 +96,9 @@ def data_generation():
 
     elif ch == 'y':
         for name in sorted(os.listdir(yellow_dir)):
-            if count < 19:
+            if count >= 24:
                 count = count + 1
-                continue
+                break
             im = cv2.imread(os.path.join(yellow_dir, name))
             count = count + 1
 
