@@ -11,6 +11,7 @@ import numpy as np
 import cv2
 import sys
 import glob
+import math
 
 # from matplotlib.patches import Ellipse
 # from PIL import Image
@@ -247,7 +248,13 @@ def train_gmm(X, n_clusters, n_epochs, clusters, flag):
     return clusters, likelihoods, scores, sample_likelihoods, history
 
 def create_pdf(params, X, img, shape, name):
-    seg_image = np.zeros(shape)
+    # seg_image = np.zeros(shape)
+
+    seg_o = np.zeros((shape[0],shape[1]),dtype=np.uint8)
+    seg_y = np.zeros((shape[0],shape[1]),dtype=np.uint8)
+    seg_g = np.zeros((shape[0],shape[1]),dtype=np.uint8)
+    print("seg:", seg_g.shape)
+
     pdf = np.zeros((len(X),3))
     x = np.array(X, dtype='uint8')
 
@@ -279,35 +286,91 @@ def create_pdf(params, X, img, shape, name):
     # plt.show()
 
     # Extract PDF for every cluster
+    print("pdf before reshaping",pdf.shape)
     pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
     pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
     pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
     pdf = pdf.reshape(shape)
 
     # segment buoys
+
+    print("pdf after reshaping", pdf.shape)
+
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     for i in range(shape[0]):
         for j in range(shape[1]):
             max_prob = max(pdf[i][j])
             if max_prob == pdf_r[i][j] and pdf_r[i][j] > 1.5*10**-5:
-                seg_image[i][j][2] = img[i][j][2]
-            elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 1.5*10**-4:
-                seg_image[i][j][1] = img[i][j][1]
-                seg_image[i][j][2] = img[i][j][2]
+                seg_o[i][j] = 255
+            elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 1*10**-4:
+                seg_y[i][j] = 255
             elif max_prob == pdf_g[i][j] and pdf_g[i][j] > 10**-5:
-                seg_image[i][j][1] = img[i][j][1]
+                seg_g[i][j] = 255
 
             # elif pdf_g[i][j] > pdf_r[i][j] and pdf_g[i][j] > pdf_y[i][j] and pdf_g[i][j] > 10**-5:
             #     seg_image[i][j][1] = 255
                 # print(seg_image[i][j])
 
+    img = detect_buoys(img,seg_g,(0,255,0))
+    img = detect_buoys(img,seg_y,(0,255,255))
+    img = detect_buoys(img,seg_o,(0,165,255))
+
+
+    # img = detect_orange(img,seg_o)
+    # detect_buoys(img,seg_y)
+
     if not os.path.exists("Data/Output/Frames/"):
         os.makedirs("Data/Output/Frames/")
-    cv2.imwrite("Data/Output/Frames/" + name, seg_image)
-    # cv2.imwrite("test.png", seg_image)
-    # cv2.imshow('segmented', seg_image)
-    # cv2.waitKey(0)
-    
+    cv2.imwrite("Data/Output/Frames/" + name, img)
+
+    cv2.imshow('img', img)
+    cv2.waitKey(0)
+
+
+def detect_buoys(img,seg,color):
+
+    # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
+    kernel = np.ones((3, 3), np.uint8)
+
+    # dilation = cv2.dilate(seg_g, kernel, iterations=9)
+    closing = cv2.morphologyEx(seg, cv2.MORPH_CLOSE, kernel)
+    opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
+
+
+    _, contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    print("contours",len(contours))
+
+    # contours_g = []
+    # for con in contours1:
+    #     area = cv2.contourArea(con)
+    #     if 600 < area < 1000:
+    #         contours_g.append(con)
+
+    circles = []
+
+    for con in contours:
+
+        perimeter = cv2.arcLength(con, True)
+        area = cv2.contourArea(con)
+        if perimeter == 0:
+            break
+        circularity = 4*math.pi*(area/(perimeter*perimeter))
+        # print("circularity",circularity)
+        if 0.5 < circularity < 1.2:              # perfect circularity 0.68
+            circles.append(con)
+
+    print("circles",len(circles))
+
+    for contour in circles:
+        (x, y), radius = cv2.minEnclosingCircle(contour)
+        center = (int(x), int(y) - 1)
+        radius = int(radius) - 1
+        # print("radius",radius)
+        if radius > 5:                           # perfect buoy radius 10
+            cv2.circle(img, center, radius, color, 2)
+    return img
+
+
 def start_training():
     X = []
     image_paths = glob.glob("Data/Green/Extracted/*")
@@ -405,41 +468,7 @@ def start_training():
         f.write(str(cluster['cov_k']))
         f.write(str(cluster['pi_k']))
     f.close()
-    # create_pdf(clusters, X)
-    # X = []
-    # for image_path in glob.glob("Data/Green/Extracted/*")[:20]:
-    #     image = cv2.imread(image_path)
-    #     for i in range(image.shape[1]):
-    #         for j in range(image.shape[0]):
-    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    #
-    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
-    # f = open("clusters_green.txt", "a+")
-    # for cluster in clusters:
-    #     f.write(str(cluster['mu_k']))
-    #     f.write(str(cluster['cov_k']))
-    #     f.write(str(cluster['pi_k']))
-    # f.close()
-    # create_pdf(clusters, X)
-    # X = []
-    # for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
-    #     image = cv2.imread(image_path)
-    #     image = cv2.resize(image, (30,30))
-    #     for i in range(image.shape[1]):
-    #         for j in range(image.shape[0]):
-    #             if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
-    #                 X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    #
-    # clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 50)
-    # f = open("clusters_yellow.txt", "a+")
-    # for cluster in clusters:
-    #     f.write(str(cluster['mu_k']))
-    #     f.write(str(cluster['cov_k']))
-    #     f.write(str(cluster['pi_k']))
-    # f.close()
-    # create_pdf(clusters, X)
-    # print(X)
+   
     
 if __name__ == '__main__':
     # start_training()
