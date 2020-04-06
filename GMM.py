@@ -332,7 +332,7 @@ def create_pdf(params, X, img, shape, name):
 
     img = detect_green(img,seg_g,(0,255,0), name)
     img = detect_orange(img,seg_o,(0,165,255), name)
-    # img = detect_yellow(img,seg_y,(0,255,255), name)
+    img = detect_yellow(img,seg_y,(0,255,255), name)
 
 
     # img = detect_orange(img,seg_o)
@@ -381,19 +381,17 @@ def detect_green(img,seg,color, name):
             circles.append(con)
 
     # print("circles green",len(circles))
-    flag = True
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         # print("radius",radius)
         if radius > 7:                           # perfect buoy radius 10
-            flag = False
             if radius < 11:
                 radius = 11
             cv2.circle(img, center, radius, color, 2)
-    if flag:
-        cv2.imwrite("Data/Green/Missed/" + name, img)
+    # if flag:
+    #     cv2.imwrite("Data/Green/Missed/" + name, img)
     return img
 
 def detect_orange(img,seg,color, name):
@@ -410,7 +408,7 @@ def detect_orange(img,seg,color, name):
     # cv2.waitKey(0)
 
     contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    print("contours orange",len(contours))
+    # print("contours orange",len(contours))
 
     # contours_g = []
     # for con in contours1:
@@ -427,7 +425,7 @@ def detect_orange(img,seg,color, name):
         if perimeter == 0:
             break
         circularity = 4*math.pi*(area/(perimeter*perimeter))
-        print("circularity",circularity)
+        # print("circularity",circularity)
         if 0.2 < circularity < 1.2:              # perfect circularity 0.68
             circles.append(con)
 
@@ -438,7 +436,7 @@ def detect_orange(img,seg,color, name):
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
-        print("radius", radius)
+        # print("radius", radius)
         if radius >= 6:
             flag = False
             if radius > max_rad:
@@ -448,8 +446,8 @@ def detect_orange(img,seg,color, name):
         if max_rad < 11:
             max_rad = 11  # perfect buoy radius 11
         cv2.circle(img, max_center, max_rad, color, 2)
-    else:
-        cv2.imwrite("Data/Red/Missed/" + name, img)
+    # else:
+    #     cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
 def detect_yellow(img,seg,color, name):
@@ -480,19 +478,31 @@ def detect_yellow(img,seg,color, name):
         if perimeter == 0:
             break
         circularity = 4*math.pi*(area/(perimeter*perimeter))
-        # print("circularity",circularity)
-        if 0.5 < circularity < 1.2:              # perfect circularity 0.68
+        if 0.6 < circularity < 1.2:              # perfect circularity 0.68
             circles.append(con)
+            # print("circularity", circularity)
 
     # print("circles yellow",len(circles))
-
+    flag = True
+    max_rad = 0
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         # print("radius",radius)
-        if radius >= 5:                           # perfect buoy radius 10
-            cv2.circle(img, center, radius, color, 2)
+        if radius >= 7:                           # perfect buoy radius 10
+            if radius > max_rad:
+                max_rad = radius
+                max_center = center
+            flag = False
+    if not flag:
+        if max_rad < 11:
+            max_rad = 11  # perfect buoy radius 11
+        cv2.circle(img, max_center, max_rad, color, 2)
+    # else:
+    #     cv2.imwrite("Data/Yellow/Missed/" + name, img)
+    # cv2.imshow('image', img)
+    # cv2.waitKey(0)
     return img
 
 def start_training():
