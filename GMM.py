@@ -246,32 +246,49 @@ def train_gmm(X, n_clusters, n_epochs, clusters, flag):
     
     return clusters, likelihoods, scores, sample_likelihoods, history
 
-def create_pdf(params, X, img, shape):
+def create_pdf(params, X, img, shape, name):
     seg_image = np.zeros(shape)
-    print("seg:", seg_image.shape)
     pdf = np.zeros((len(X),3))
-    # x = np.array([np.arange(0,256,1), X[:,1], X[:,2]]).transpose()
     x = np.array(X, dtype='uint8')
+
+    # get pixel probabilities for all clusters
     for i, clusters in enumerate(params):
         for cluster in clusters:
             y_r = multivariate_normal.pdf(x, cluster['mu_k'], cluster['cov_k'])
             pdf[:,i] = pdf[:,i] + cluster['pi_k'] * y_r
-    # plt.plot(x, pdf)
+
+    # Display generated GMM models
+    # fig1 = plt.figure()
+    # ax1 = fig1.gca()
+    # ax1.set_title("Red")
+    # ax1.plot(x[:,0], pdf[:,0], 'r')
+    # ax1.plot(x[:,1], pdf[:,0], 'g')
+    # ax1.plot(x[:,2], pdf[:,0], 'b')
+    # fig2 = plt.figure()
+    # ax2 = fig2.gca()
+    # ax2.set_title("Green")
+    # ax2.plot(x[:,0], pdf[:,1], 'r')
+    # ax2.plot(x[:,1], pdf[:,1], 'g')
+    # ax2.plot(x[:,2], pdf[:,1], 'b')
+    # fig3 = plt.figure()
+    # ax3 = fig3.gca()
+    # ax3.set_title("Yellow")
+    # ax3.plot(x[:,0], pdf[:,2], 'r')
+    # ax3.plot(x[:,1], pdf[:,2], 'g')
+    # ax3.plot(x[:,2], pdf[:,2], 'b')
     # plt.show()
-    print(pdf.shape)
+
+    # Extract PDF for every cluster
     pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
     pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
     pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
     pdf = pdf.reshape(shape)
-    print(pdf.shape)
+
+    # segment buoys
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    # max = np.max(pdf)
-    # pdf = pdf*255/max
     for i in range(shape[0]):
         for j in range(shape[1]):
             max_prob = max(pdf[i][j])
-            # print(max_prob)
-            # print(pdf_r[i][j], pdf_g[i][j], pdf_y[i][j])
             if max_prob == pdf_r[i][j] and pdf_r[i][j] > 1.5*10**-5:
                 seg_image[i][j][2] = img[i][j][2]
             elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 1.5*10**-4:
@@ -284,11 +301,12 @@ def create_pdf(params, X, img, shape):
             #     seg_image[i][j][1] = 255
                 # print(seg_image[i][j])
 
-    # cv2.imshow("image", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-    # cv2.waitKey(10)
-    cv2.imwrite("test.png", seg_image)
-    cv2.imshow('segmented', seg_image)
-    cv2.waitKey(0)
+    if not os.path.exists("Data/Output/Frames/"):
+        os.makedirs("Data/Output/Frames/")
+    cv2.imwrite("Data/Output/Frames/" + name, seg_image)
+    # cv2.imwrite("test.png", seg_image)
+    # cv2.imshow('segmented', seg_image)
+    # cv2.waitKey(0)
     
 def start_training():
     X = []
@@ -448,62 +466,64 @@ def start_training():
     # print(X)
     
 if __name__ == '__main__':
-    start_training()
-    # X = []
-    # # for image_path in glob.glob("Data/Yellow/Extracted/*")[:20]:
-    # #     image = cv2.imread(image_path)
-    # #     image = cv2.resize(image, (30, 30))
+    # start_training()
+    X = []
+    # Red
+    params = []
+    params.append([{'mu_k': [224.24308412, 188.40766512, 135.35937751],
+               'cov_k': [[ 513.08028843,  352.57410638,  189.91628892],
+                         [ 352.57410638, 1421.76477916,  881.23881318],
+                         [ 189.91628892,  881.23881318,  609.7800478 ]],
+               'pi_k': [0.14211061]},
+              {'mu_k': [243.82040195, 187.27562985, 115.37300701],
+               'cov_k': [[  60.89764822, -214.41121252, -129.23936416],
+                         [-214.41121252, 1000.80112658,  588.03967894],
+                         [-129.23936416,  588.03967894,  419.87880931]],
+               'pi_k': [0.68677214]},
+              {'mu_k': [254.77915359, 142.38696293,  89.39158317],
+               'cov_k': [[ 1.72772990e-01, -3.86259090e-01, -1.29844429e-01],
+                         [-3.86259090e-01,  1.45855360e+02,  1.14584737e+02],
+                         [-1.29844429e-01,  1.14584737e+02,  1.45921738e+02]],
+               'pi_k': [0.17111725]}
+    ])
+    #Green
+    params.append([{'mu_k': [145.85367447, 229.33504252, 130.50776874],
+               'cov_k':[[267.68844795, 147.12067433, 133.39614562],
+                        [147.12067433, 159.81581508,  49.80439924],
+                        [133.39614562,  49.80439924,  94.65929345]],
+               'pi_k': [0.29864214]},
+              {'mu_k': [197.40240215, 245.68696359, 154.64136134],
+               'cov_k':[[403.92980109,   6.12551991, 243.85808718],
+                        [  6.12551991,  24.20421411,  29.22713264],
+                        [243.85808718,  29.22713264, 214.80791633]],
+               'pi_k': [0.24938503]},
+              {'mu_k': [107.44334583, 189.26138203, 116.32419582],
+               'cov_k': [[155.40240711, 180.9066731,   78.33404419],
+                        [180.9066731,  330.25013577, 102.67266542],
+                        [ 78.33404419, 102.67266542,  71.72121417]],
+               'pi_k': [0.45197282]}])
+    # yellow
+    params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
+              'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
+                       [ 584.75558749,  456.76008394,  278.65632245],
+                       [  36.38668374,  278.65632245,  858.18023939]],
+              'pi_k': [0.39008973]},
+             {'mu_k': [229.51226295, 240.6241885,  139.21091162],
+              'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
+                       [1.51749218,   4.52050088, - 29.73265531],
+                       [-42.08377392, - 29.73265531, 772.02085145]],
+              'pi_k': [0.55869529]},
+             {'mu_k': [82.88271189, 91.51975606, 61.31964543],
+              'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
+                        [2687.98151126, 2944.4162938,  2029.92877086],
+                        [1836.63756781, 2029.92877086, 1480.67198803]],
+              'pi_k': [0.05121499]}])
+
     # image = cv2.imread("Data/Green/Test/frame008.png")
-    # for i in range(image.shape[1]):
-    #     for j in range(image.shape[0]):
-    #         X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
-    # params = []
-    # params.append([{'mu_k': [252.16152635, 152.40805137,  93.57734565],
-    #           'cov_k': [[  9.26513121, -37.31779491, -21.68779137],
-    #                      [-37.31779491, 387.94743064, 228.53106602],
-    #                      [-21.68779137, 228.53106602, 189.12188744]],
-    #           'pi_k': [0.59897148]},
-    # {'mu_k': [230.37233525, 171.62158315, 121.0135146],
-    #  'cov_k': [[ 596.22083251,  235.6915169,    62.65293133],
-    #            [ 235.6915169,  1108.6769714,   706.83031066],
-    #            [  62.65293133,  706.83031066,  537.28323765]],
-    #  'pi_k': [0.08908288]},
-    #   {'mu_k': [237.03092141, 214.56417343, 131.05491014],
-    #    'cov_k': [[  40.82748049, -112.97472246, -101.0973088 ],
-    #              [-112.97472246,  447.85877011,  382.74532092],
-    #              [-101.0973088,   382.74532092,  429.67233197]],
-    #    'pi_k': [0.31194564]}
-    # ])
-    # #Green
-    # params.append([{'mu_k': [198.52851258, 245.92232003, 156.95888053],
-    #            'cov_k':[[405.95235374,  14.57167719, 256.60293682],
-    #                     [ 14.57167719,  27.41013544,  31.93758814],
-    #                     [256.60293682,  31.93758814, 234.29463999]],
-    #            'pi_k': [0.24017603]},
-    #           {'mu_k': [106.67782568, 186.55604151, 116.23520101],
-    #            'cov_k':[[130.62914369, 156.4074056,   71.10019976],
-    #                     [156.4074056,  311.47821003,  95.22541093],
-    #                     [ 71.10019976,  95.22541093,  67.39115444]],
-    #            'pi_k': [0.41947481]},
-    #           {'mu_k': [143.11443463, 227.27641259, 129.40975209],
-    #            'cov_k': [[297.74849462, 192.95405216, 136.55362279],
-    #                      [192.95405216, 195.68659985,  71.51763291],
-    #                      [136.55362279,  71.51763291,  88.74814044]],
-    #            'pi_k': [0.34034916]}])
-    # # yellow
-    # params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
-    #           'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
-    #                    [ 584.75558749,  456.76008394,  278.65632245],
-    #                    [  36.38668374,  278.65632245,  858.18023939]],
-    #           'pi_k': [0.39008973]},
-    #          {'mu_k': [229.51226295, 240.6241885,  139.21091162],
-    #           'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
-    #                    [1.51749218,   4.52050088, - 29.73265531],
-    #                    [-42.08377392, - 29.73265531, 772.02085145]],
-    #           'pi_k': [0.55869529]},
-    #          {'mu_k': [82.88271189, 91.51975606, 61.31964543],
-    #           'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
-    #                     [2687.98151126, 2944.4162938,  2029.92877086],
-    #                     [1836.63756781, 2029.92877086, 1480.67198803]],
-    #           'pi_k': [0.05121499]}])
-    # create_pdf(params, X, image.shape)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    img_dir = os.path.join(current_dir, "Frames/")
+    for name in sorted(os.listdir(img_dir)):
+        image = cv2.imread(os.path.join(img_dir, name))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        X = image.reshape((image.shape[0]*image.shape[1], image.shape[2]))
+        create_pdf(params, X, image, image.shape, name)
