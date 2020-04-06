@@ -298,7 +298,7 @@ def create_pdf(params, X, img, shape, name):
     # plt.show()
 
     # Extract PDF for every cluster
-    print("pdf before reshaping",pdf.shape)
+    # print("pdf before reshaping",pdf.shape)
     pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
     pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
     pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
@@ -306,7 +306,7 @@ def create_pdf(params, X, img, shape, name):
 
     # segment buoys
 
-    print("pdf after reshaping", pdf.shape)
+    # print("pdf after reshaping", pdf.shape)
 
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     for i in range(shape[0]):
@@ -330,9 +330,9 @@ def create_pdf(params, X, img, shape, name):
             #     seg_image[i][j][1] = 255
                 # print(seg_image[i][j])
 
-    img = detect_green(img,seg_g,(0,255,0))
-    img = detect_orange(img,seg_o,(0,165,255))
-    img = detect_yellow(img,seg_y,(0,255,255))
+    img = detect_green(img,seg_g,(0,255,0), name)
+    img = detect_orange(img,seg_o,(0,165,255), name)
+    img = detect_yellow(img,seg_y,(0,255,255), name)
 
 
     # img = detect_orange(img,seg_o)
@@ -342,13 +342,13 @@ def create_pdf(params, X, img, shape, name):
         os.makedirs("Data/Output/Frames/")
     cv2.imwrite("Data/Output/Frames/" + name, img)
 
-    cv2.imwrite("Test.png", seg_y)
+    # cv2.imwrite("Test.png", seg_y)
 
     # cv2.imshow('img', img)
     # cv2.waitKey(0)
 
 
-def detect_green(img,seg,color):
+def detect_green(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -358,7 +358,7 @@ def detect_green(img,seg,color):
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
 
 
-    _, contours, _= cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(opening, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     print("contours green",len(contours))
 
     # contours_g = []
@@ -381,17 +381,22 @@ def detect_green(img,seg,color):
             circles.append(con)
 
     print("circles green",len(circles))
-
+    flag = False
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
         # print("radius",radius)
         if radius > 7:                           # perfect buoy radius 10
+            flag = True
+            if radius < 11:
+                radius = 11
             cv2.circle(img, center, radius, color, 2)
+    if not flag:
+        cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
-def detect_orange(img,seg,color):
+def detect_orange(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -424,17 +429,22 @@ def detect_orange(img,seg,color):
             circles.append(con)
 
     # print("circles orange",len(circles))
-
+    flag = False
     for contour in circles:
         (x, y), radius = cv2.minEnclosingCircle(contour)
         center = (int(x), int(y) - 1)
         radius = int(radius) - 1
-        print("radius",radius)
-        if radius > 7:                           # perfect buoy radius 10
+        print("radius", radius)
+        if radius > 8:
+            flag = True
+            if radius < 11:
+                radius = 11  # perfect buoy radius 11
             cv2.circle(img, center, radius, color, 2)
+    if not flag:
+        cv2.imwrite("Data/Red/Missed/" + name, img)
     return img
 
-def detect_yellow(img,seg,color):
+def detect_yellow(img,seg,color, name):
 
     # ret, threshold = cv2.threshold(seg_g, 127, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
@@ -651,6 +661,7 @@ if __name__ == '__main__':
                         [180.9066731,  330.25013577, 102.67266542],
                         [ 78.33404419, 102.67266542,  71.72121417]],
                'pi_k': [0.45197282]}])
+
     # # yellow
     # params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
     #           'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
