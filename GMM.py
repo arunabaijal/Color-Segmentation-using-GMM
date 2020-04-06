@@ -12,6 +12,8 @@ import cv2
 import sys
 import glob
 import math
+from copy import deepcopy
+
 
 # from matplotlib.patches import Ellipse
 # from PIL import Image
@@ -256,12 +258,22 @@ def create_pdf(params, X, img, shape, name):
     print("seg:", seg_g.shape)
 
     pdf = np.zeros((len(X),3))
+    # img_copy = deepcopy(img)
+    img_hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    X_hls = img_hls.reshape((img_hls.shape[0]*img_hls.shape[1], img_hls.shape[2]))
     x = np.array(X, dtype='uint8')
+    x_hls = np.array(X_hls, dtype='uint8')
 
     # get pixel probabilities for all clusters
     for i, clusters in enumerate(params):
+        if i < 2:
+            x_ = x
+        else:
+            x_[:, 0] = x_hls[:, 2]
+            x_[:, 1] = x_hls[:, 1]
+            x_[:, 2] = x_hls[:, 0]
         for cluster in clusters:
-            y_r = multivariate_normal.pdf(x, cluster['mu_k'], cluster['cov_k'])
+            y_r = multivariate_normal.pdf(x_, cluster['mu_k'], cluster['cov_k'])
             pdf[:,i] = pdf[:,i] + cluster['pi_k'] * y_r
 
     # Display generated GMM models
@@ -280,21 +292,21 @@ def create_pdf(params, X, img, shape, name):
     # fig3 = plt.figure()
     # ax3 = fig3.gca()
     # ax3.set_title("Yellow")
-    # ax3.plot(x[:,0], pdf[:,2], 'r')
-    # ax3.plot(x[:,1], pdf[:,2], 'g')
-    # ax3.plot(x[:,2], pdf[:,2], 'b')
+    # ax3.plot(x_hls[:,0], pdf[:,2], 'b')
+    # ax3.plot(x_hls[:,1], pdf[:,2], 'g')
+    # ax3.plot(x_hls[:,2], pdf[:,2], 'r')
     # plt.show()
 
     # Extract PDF for every cluster
-    print("pdf before reshaping",pdf.shape)
+    # print("pdf before reshaping",pdf.shape)
     pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
     pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
     pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
-    pdf = pdf.reshape(shape)
+    pdf = pdf.reshape(shape)    
 
     # segment buoys
 
-    print("pdf after reshaping", pdf.shape)
+    # print("pdf after reshaping", pdf.shape)
 
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     for i in range(shape[0]):
@@ -302,10 +314,17 @@ def create_pdf(params, X, img, shape, name):
             max_prob = max(pdf[i][j])
             if max_prob == pdf_r[i][j] and pdf_r[i][j] > 1.5*10**-5:
                 seg_o[i][j] = 255
-            elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 1*10**-4:
+            elif max_prob == pdf_y[i][j] and pdf_y[i][j] > 5*10**-6:
                 seg_y[i][j] = 255
             elif max_prob == pdf_g[i][j] and pdf_g[i][j] > 10**-5:
                 seg_g[i][j] = 255
+
+            #     seg_image[i][j][2] = img[i][j][2]
+            # elif max_prob == pdf_y[i][j]:
+            #     seg_image[i][j][1] = img[i][j][1]
+            #     seg_image[i][j][2] = img[i][j][2]
+            # elif max_prob == pdf_g[i][j] and pdf_g[i][j] > 10**-1:
+            #     seg_image[i][j][1] = img[i][j][1]
 
             # elif pdf_g[i][j] > pdf_r[i][j] and pdf_g[i][j] > pdf_y[i][j] and pdf_g[i][j] > 10**-5:
             #     seg_image[i][j][1] = 255
@@ -322,6 +341,8 @@ def create_pdf(params, X, img, shape, name):
     if not os.path.exists("Data/Output/Frames/"):
         os.makedirs("Data/Output/Frames/")
     cv2.imwrite("Data/Output/Frames/" + name, img)
+
+    # cv2.imwrite("Test.png", seg_y)
 
     # cv2.imshow('img', img)
     # cv2.waitKey(0)
@@ -474,12 +495,13 @@ def detect_yellow(img,seg,color, name):
             cv2.circle(img, center, radius, color, 2)
     return img
 
-
 def start_training():
     X = []
     image_paths = glob.glob("Data/Yellow/Extracted/*")
     for image_path in image_paths[:10]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -489,6 +511,7 @@ def start_training():
     X = []
     for image_path in image_paths[10:20]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -497,6 +520,7 @@ def start_training():
     X = []
     for image_path in image_paths[20:30]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -505,6 +529,7 @@ def start_training():
     X = []
     for image_path in image_paths[30:40]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -513,6 +538,7 @@ def start_training():
     X = []
     for image_path in image_paths[40:50]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -521,6 +547,7 @@ def start_training():
     X = []
     for image_path in image_paths[50:60]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -529,6 +556,7 @@ def start_training():
     X = []
     for image_path in image_paths[60:70]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -537,6 +565,7 @@ def start_training():
     X = []
     for image_path in image_paths[70:80]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -545,6 +574,7 @@ def start_training():
     X = []
     for image_path in image_paths[80:90]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -553,6 +583,7 @@ def start_training():
     X = []
     for image_path in image_paths[90:100]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -561,6 +592,7 @@ def start_training():
     X = []
     for image_path in image_paths[100:110]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -569,6 +601,7 @@ def start_training():
     X = []
     for image_path in image_paths[110:120]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -577,6 +610,7 @@ def start_training():
     X = []
     for image_path in image_paths[120:130]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
@@ -585,12 +619,13 @@ def start_training():
     X = []
     for image_path in image_paths[130:]:
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
         for i in range(image.shape[1]):
             for j in range(image.shape[0]):
                 if [image[j][i][2], image[j][i][1], image[j][i][0]] != [0,0,0]:
                     X.append([int(image[j][i][2]), int(image[j][i][1]), int(image[j][i][0])])
     clusters, likelihoods, scores, sample_likelihoods, history = train_gmm(np.array(X), 3, 30, clusters, True)
-    f = open("clusters_yellow.txt", "a+")
+    f = open("clusters_yellow_hsv.txt", "a+")
     for cluster in clusters:
         f.write(str(cluster['mu_k']))
         f.write(str(cluster['cov_k']))
@@ -600,7 +635,6 @@ def start_training():
     
 if __name__ == '__main__':
     # start_training()
-    X = []
     # Red
     params = []
     params.append([{'mu_k': [224.24308412, 188.40766512, 135.35937751],
@@ -635,32 +669,50 @@ if __name__ == '__main__':
                         [180.9066731,  330.25013577, 102.67266542],
                         [ 78.33404419, 102.67266542,  71.72121417]],
                'pi_k': [0.45197282]}])
-    # yellow
-    params.append([{'mu_k': [228.31602817, 238.5949339,  173.6752935 ],
-              'cov_k':[[ 2.91732233,  0.82988898,  0.33160615],
-                       [ 0.82988898,  1.75061601, -0.24189029],
-                       [ 0.33160615, -0.24189029,  9.91727787]],
-              'pi_k': [0.14398764]},
-             {'mu_k': [216.05333612, 219.6934666,  114.20710685],
-              'cov_k':[[ 741.51694195,  403.25024373,   51.67876556],
-                       [ 403.25024373,  404.85554613,  396.04026024],
-                       [  51.67876556,  396.04026024, 1008.37538739]],
-              'pi_k': [0.39397701]},
-             {'mu_k': [230.27535144, 241.26179943, 124.20181911],
-              'cov_k': [[ 9.60457292e+00,  2.10043881e-01, -4.75862736e+01],
-                        [ 2.10043881e-01,  5.27006195e+00, -7.64786812e-01],
-                        [-4.75862736e+01, -7.64786812e-01,  5.20738484e+02]],
-              'pi_k': [0.46203535]}])
 
-    # image = cv2.imread("Data/Green/Test/frame008.png")
+    # # yellow
+    # params.append([{'mu_k': [212.86290854, 220.68219435, 118.23609258],
+    #           'cov_k':[[1031.79711432,  584.75558749,   36.38668374],
+    #                    [ 584.75558749,  456.76008394,  278.65632245],
+    #                    [  36.38668374,  278.65632245,  858.18023939]],
+    #           'pi_k': [0.39008973]},
+    #          {'mu_k': [229.51226295, 240.6241885,  139.21091162],
+    #           'cov_k':[[  7.38586612,   1.51749218, -42.08377392],
+    #                    [1.51749218,   4.52050088, - 29.73265531],
+    #                    [-42.08377392, - 29.73265531, 772.02085145]],
+    #           'pi_k': [0.55869529]},
+    #          {'mu_k': [82.88271189, 91.51975606, 61.31964543],
+    #           'cov_k': [[2505.82094342, 2687.98151126, 1836.63756781],
+    #                     [2687.98151126, 2944.4162938,  2029.92877086],
+    #                     [1836.63756781, 2029.92877086, 1480.67198803]],
+    #           'pi_k': [0.05121499]}])
+    # yellow_hls
+    params.append([{'mu_k': [182.94576047, 175.4008258,   32.33167745],
+                    'cov_k':[[1776.41625016,  336.33966579, -144.87748637],
+                             [ 336.33966579,  465.20102031,   48.7071449 ],
+                             [-144.87748637,   48.7071449,    40.14885018]],
+                    'pi_k': [0.30991155]},
+                   {'mu_k': [168.91054492, 206.42955845,  34.93661804],
+                    'cov_k':[[37.32255183, -2.92597521,  1.75896241],
+                             [-2.92597521,  2.14575207,  0.3472663 ],
+                             [ 1.75896241,  0.3472663,   0.77283132]],
+                    'pi_k': [0.18545952]},
+                   {'mu_k': [205.99802312, 180.80164656,  32.71156968],
+                    'cov_k':[[122.76159927, -88.65675639,  -5.71343193],
+                             [-88.65675639, 152.23781577,  15.79192532],
+                             [ -5.71343193,  15.79192532,   2.22807766]],
+                    'pi_k': [0.50462893]}])
+
+    X = []
+    # image = cv2.imread("Data/Yellow/Test/frame008.png")
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # X = image.reshape((image.shape[0]*image.shape[1], image.shape[2]))
+    # create_pdf(params, X, image, image.shape, "frame008.png")
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     img_dir = os.path.join(current_dir, "Frames/")
-    count =0
     for name in sorted(os.listdir(img_dir)):
         image = cv2.imread(os.path.join(img_dir, name))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         X = image.reshape((image.shape[0]*image.shape[1], image.shape[2]))
         create_pdf(params, X, image, image.shape, name)
-        count =count +1
-        # if count==1:
-        #     break
