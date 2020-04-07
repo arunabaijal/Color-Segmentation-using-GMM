@@ -28,18 +28,18 @@ def gaussian_fit(xdata,ydata):
 
 def get_histogram(data, ch):
     p, q, r = data.shape
-      
+    
     # calculate histogram of image
     histb = cv2.calcHist([data],[0],None,[256],[0,256])
     histg = cv2.calcHist([data],[1],None,[256],[0,256])
     histr = cv2.calcHist([data],[2],None,[256],[0,256])
     # ignore black values
-    histr[0] = 0 
+    histr[0] = 0
     histg[0] = 0
     histb[0] = 0
 
     # Generate gaussin fit for three channels
-    x = np.arange(0, 256, 1) 
+    x = np.arange(0, 256, 1)
     mu_r, sigma_r = gaussian_fit(np.reshape(x, (256, 1)), np.reshape(histr, (256, 1)))
     y_r = norm.pdf(x, mu_r, sigma_r)
     mu_g, sigma_g = gaussian_fit(np.reshape(x, (256, 1)), np.reshape(histg, (256, 1)))
@@ -57,13 +57,13 @@ def get_histogram(data, ch):
     axs[1].plot(histg, 'g')
     axs[1].plot(histb, 'b')
 
-    plt.show() 
+    plt.show()
 
 # Read train images for different categories and display histogram
 def get_1Dgaussian(ch = 'r'):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     red_dir = os.path.join(current_dir, "Data/Red/Extracted")
-    yellow_dir = os.path.join(current_dir, "Data/Yellow/Extracted") 
+    yellow_dir = os.path.join(current_dir, "Data/Yellow/Extracted")
     green_dir = os.path.join(current_dir, "Data/Green/Extracted")
     
     first = True
@@ -302,7 +302,7 @@ def create_pdf(params, X, img, shape, name):
     pdf_r = pdf[:,0].reshape((shape[0], shape[1]))
     pdf_g = pdf[:,1].reshape((shape[0], shape[1]))
     pdf_y = pdf[:,2].reshape((shape[0], shape[1]))
-    pdf = pdf.reshape(shape)    
+    pdf = pdf.reshape(shape)
 
     # segment buoys
 
@@ -656,7 +656,7 @@ if __name__ == '__main__':
     success, image = vidcap.read()
     count = 0
     while success:
-        cv2.imwrite("Frames/frame%d.png" % count, image)  # save frame as JPEG file
+        cv2.imwrite("Frames/frame%03d.png" % count, image)  # save frame as JPEG file
         success, image = vidcap.read()
         count += 1
     params = []
@@ -743,11 +743,9 @@ if __name__ == '__main__':
     cam = cv2.VideoCapture("detectbuoy.avi")
     width = int(cam.get(3))  # float
     height = int(cam.get(4))
-    print(width, height)
     vidWriter = cv2.VideoWriter("./Result.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 8, (width, height))
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    img_dir = os.path.join(current_dir, "Data/Output/Frames/")
-    for name in sorted(os.listdir(img_dir)):
-        image = cv2.imread(os.path.join(img_dir, name))
+    img_paths = glob.glob("Data/Output/Frames/*")
+    for name in sorted(img_paths):
+        image = cv2.imread(name)
         vidWriter.write(image)
     vidWriter.release()
