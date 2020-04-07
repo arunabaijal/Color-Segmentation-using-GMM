@@ -13,7 +13,7 @@ import sys
 import glob
 import math
 from copy import deepcopy
-
+import argparse
 
 # from matplotlib.patches import Ellipse
 # from PIL import Image
@@ -646,6 +646,19 @@ def start_training():
 if __name__ == '__main__':
     # start_training()
     # Red
+    parser = argparse.ArgumentParser(description='Run color detection.')
+    parser.add_argument('--video', default="detectbuoy.avi",
+                        help='Video Path')
+    args = parser.parse_args()
+    if not os.path.exists("Frames/"):
+        os.makedirs("Frames/")
+    vidcap = cv2.VideoCapture(args.video)
+    success, image = vidcap.read()
+    count = 0
+    while success:
+        cv2.imwrite("Frames/frame%d.png" % count, image)  # save frame as JPEG file
+        success, image = vidcap.read()
+        count += 1
     params = []
     params.append([{'mu_k': [224.24308412, 188.40766512, 135.35937751],
                'cov_k': [[ 513.08028843,  352.57410638,  189.91628892],
@@ -726,3 +739,15 @@ if __name__ == '__main__':
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         X = image.reshape((image.shape[0]*image.shape[1], image.shape[2]))
         create_pdf(params, X, image, image.shape, name)
+    
+    cam = cv2.VideoCapture("detectbuoy.avi")
+    width = int(cam.get(3))  # float
+    height = int(cam.get(4))
+    print(width, height)
+    vidWriter = cv2.VideoWriter("./Result.mp4", cv2.VideoWriter_fourcc(*'mp4v'), 8, (width, height))
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    img_dir = os.path.join(current_dir, "Data/Output/Frames/")
+    for name in sorted(os.listdir(img_dir)):
+        image = cv2.imread(os.path.join(img_dir, name))
+        vidWriter.write(image)
+    vidWriter.release()
