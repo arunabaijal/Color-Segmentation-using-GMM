@@ -12,3 +12,6 @@ The default value for the videopath is `detectbuoy.avi`
 The program will read the video into frames and store the frames in the folder `Frames\`.<br>
 After program execution, the output frames will be generated in the folder `Data\Output\Frames`
 and resultant video will be saved as `Result.mp4`.
+
+## Note
+data_generation.py is the python script used to generate the data that will be used to train the GMMs
